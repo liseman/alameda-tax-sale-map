@@ -65,6 +65,12 @@ html,body{width:100%;height:100%;overflow:hidden;position:fixed;font-family:-app
 .property-popup{min-width:200px;max-width:240px}
 .stats-box{max-width:130px;padding:5px 6px;font-size:9px}
 }
+.locate-btn{background:rgba(255,255,255,.95);padding:6px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.locate-btn button{background:#2563eb;color:white;border:none;padding:8px 12px;border-radius:8px;font-size:20px;cursor:pointer;min-height:44px;min-width:44px;line-height:1;transition:background .2s}
+.locate-btn button:hover{background:#1d4ed8}
+.locate-btn button.locating{background:#f59e0b;animation:pulse 1s infinite}
+.locate-btn button.error{background:#dc2626}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 </style>
 </head>
 <body>
@@ -152,6 +158,26 @@ stats.onAdd=function(){const d=L.DomUtil.create('div','stats-box');const t=prope
 stats.addTo(map);
 
 map.fitBounds(L.latLngBounds(properties.map(p=>[p.lat,p.lon])),{padding:[30,30]});
+
+let userMarker=null,userCircle=null;
+const locateCtrl=L.control({position:'topleft'});
+locateCtrl.onAdd=function(){const d=L.DomUtil.create('div','locate-btn');d.innerHTML='<button id="locateBtn" title="Show my location">&#128205;</button>';L.DomEvent.disableClickPropagation(d);d.querySelector('button').addEventListener('click',doLocate);return d};
+locateCtrl.addTo(map);
+function doLocate(){
+const btn=document.getElementById('locateBtn');
+if(!navigator.geolocation){btn.classList.add('error');btn.title='Geolocation not supported';setTimeout(()=>btn.classList.remove('error'),2000);return}
+btn.classList.add('locating');btn.title='Finding location...';
+navigator.geolocation.getCurrentPosition(function(pos){
+btn.classList.remove('locating');btn.title='Show my location';
+const lat=pos.coords.latitude,lng=pos.coords.longitude,acc=pos.coords.accuracy;
+if(userMarker){map.removeLayer(userMarker);map.removeLayer(userCircle)}
+userMarker=L.circleMarker([lat,lng],{radius:8,fillColor:'#4285F4',fillOpacity:1,color:'white',weight:3}).addTo(map).bindPopup('You are here'+(acc?' (±'+Math.round(acc)+'m)':''));
+userCircle=L.circle([lat,lng],{radius:acc,fillColor:'#4285F4',fillOpacity:.1,color:'#4285F4',weight:1}).addTo(map);
+map.setView([lat,lng],15);userMarker.openPopup();
+},function(err){
+btn.classList.remove('locating');btn.classList.add('error');btn.title=err.message;
+setTimeout(()=>btn.classList.remove('error'),3000);
+},{enableHighAccuracy:true,timeout:10000,maximumAge:60000})}
 </script>
 </body>
 </html>
