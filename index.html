@@ -144,10 +144,10 @@ const ids=properties.map(p=>p.auction_id).filter(Boolean);let done=0,updated=0;
 for(let i=0;i<ids.length;i+=10){
 const batch=ids.slice(i,i+10);
 const res=await Promise.all(batch.map(async id=>{try{const r=await fetch('https://www.bid4assets.com/auction/index/'+id);const h=await r.text();return{id,cb:parseInt(h.match(/Current BID:\s*\$([\d,]+)/)?.[1]?.replace(/,/g,'')||'0'),nb:parseInt(h.match(/Number of Bids:\s*(\d+)/)?.[1]||'0'),s:h.match(/Status:\s*(In Preview|Active|Closed|Sold)/i)?.[1]||'unknown'};}catch(e){return{id,err:1}}}));
-res.forEach(r=>{if(!r.err){const idx=auctionLookup[r.id];if(idx!==undefined){properties[idx].cur_bid=r.cb||properties[idx].cur_bid;properties[idx].num_bids=r.nb;properties[idx].status=r.s;if(r.cb>properties[idx].min_bid)updated++}}});
+res.forEach(r=>{if(!r.err){const idx=auctionLookup[r.id];if(idx!==undefined){properties[idx].cur_bid=r.cb||properties[idx].cur_bid;properties[idx].num_bids=r.nb;properties[idx].status=r.s;if(r.nb>0)updated++}}});
 done+=batch.length;st.textContent='Fetched '+done+'/'+ids.length+'...';}
 btn.disabled=false;btn.innerHTML='&#128260; Refresh Live Prices';
-st.textContent='Updated '+new Date().toLocaleTimeString()+' — '+updated+' with bids above min';};
+st.textContent='Updated '+new Date().toLocaleTimeString()+' — '+updated+' with active bids';};
 
 const legend=L.control({position:'bottomright'});
 legend.onAdd=function(){const d=L.DomUtil.create('div','legend');d.innerHTML='<h4>Cur Bid</h4><div><span class="dot green"></span> Under $50k</div><div><span class="dot yellow"></span> $50k–$150k</div><div><span class="dot red"></span> Over $150k</div><div style="margin-top:6px;border-top:1px solid #ddd;padding-top:4px"><span style="display:inline-block;width:11px;height:11px;border:2px solid #00ffff;margin-right:5px;vertical-align:middle"></span>Parcel</div>';return d};
