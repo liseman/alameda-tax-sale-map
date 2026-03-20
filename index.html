@@ -90,13 +90,13 @@ const roadLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/serv
 const placeLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
 esriSat.addTo(map); roadLabels.addTo(map); placeLabels.addTo(map);
 
-function getParcelColor(p) { const b=p.min_bid||0; if(b<50000)return'#00ff88';if(b<150000)return'#ffff00';return'#ff4444'; }
+function getParcelColor(p) { const b=p.cur_bid||p.min_bid||0; if(b<50000)return'#00ff88';if(b<150000)return'#ffff00';return'#ff4444'; }
 
 const parcelLayer = L.geoJSON(parcelData, {
     style: f => ({ color:'#00ffff', weight:2.5, fillColor:getParcelColor(f.properties), fillOpacity:0.2 }),
     onEachFeature: (f, layer) => {
         const p=f.properties; if(!p.APN) return;
-        const bid=p.min_bid?'$'+p.min_bid.toLocaleString():'N/A';
+        const bid=(p.cur_bid||p.min_bid)?'$'+(p.cur_bid||p.min_bid).toLocaleString():'N/A';
         if(!isMobile) layer.bindTooltip('APN: '+p.APN+' | '+bid, {sticky:true, className:'parcel-tooltip'});
         layer.on('mouseover', function(){this.setStyle({weight:4,fillOpacity:.4})});
         layer.on('mouseout', function(){parcelLayer.resetStyle(this)});
@@ -150,7 +150,7 @@ btn.disabled=false;btn.innerHTML='&#128260; Refresh Live Prices';
 st.textContent='Updated '+new Date().toLocaleTimeString()+' — '+updated+' with bids above min';};
 
 const legend=L.control({position:'bottomright'});
-legend.onAdd=function(){const d=L.DomUtil.create('div','legend');d.innerHTML='<h4>Min Bid</h4><div><span class="dot green"></span> Under $50k</div><div><span class="dot yellow"></span> $50k–$150k</div><div><span class="dot red"></span> Over $150k</div><div style="margin-top:6px;border-top:1px solid #ddd;padding-top:4px"><span style="display:inline-block;width:11px;height:11px;border:2px solid #00ffff;margin-right:5px;vertical-align:middle"></span>Parcel</div>';return d};
+legend.onAdd=function(){const d=L.DomUtil.create('div','legend');d.innerHTML='<h4>Cur Bid</h4><div><span class="dot green"></span> Under $50k</div><div><span class="dot yellow"></span> $50k–$150k</div><div><span class="dot red"></span> Over $150k</div><div style="margin-top:6px;border-top:1px solid #ddd;padding-top:4px"><span style="display:inline-block;width:11px;height:11px;border:2px solid #00ffff;margin-right:5px;vertical-align:middle"></span>Parcel</div>';return d};
 legend.addTo(map);
 
 const stats=L.control({position:'topright'});
